@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>SpeakUp — Speech Rehab</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b1220;--card:#14203a;--card2:#1c2d4f;--card3:#223460;
+  --acc1:#fbbf24;--acc2:#f87171;--acc3:#34d399;--acc4:#a78bfa;--acc5:#60a5fa;
+  --text:#e2e8f0;--muted:#64748b;--r:18px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:
+  radial-gradient(ellipse at 15% 15%,#162560 0%,transparent 55%),
+  radial-gradient(ellipse at 85% 85%,#1a0a3e 0%,transparent 55%);
+  pointer-events:none;z-index:0;}
+
+.wrap{position:relative;z-index:1;max-width:680px;margin:0 auto;padding:12px 14px 30px;}
+
+/* HEADER */
+header{text-align:center;padding:14px 0 6px;}
+.logo{font-family:'Fredoka One',cursive;font-size:2.2rem;
+  background:linear-gradient(135deg,#fbbf24,#f87171,#a78bfa);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.tagline{color:var(--muted);font-size:0.72rem;letter-spacing:2.5px;text-transform:uppercase;font-weight:700;margin-top:1px;}
+
+/* HUD */
+.hud{display:flex;align-items:center;gap:9px;margin:10px 0;}
+.hud-score{background:var(--card2);border:2px solid var(--acc1);border-radius:99px;
+  padding:4px 13px;font-size:0.78rem;font-weight:900;color:var(--acc1);white-space:nowrap;}
+.prog-bar{flex:1;height:8px;background:var(--card2);border-radius:99px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--acc3),var(--acc1));transition:width .5s;}
+.hud-level{font-size:0.7rem;font-weight:900;color:var(--acc4);white-space:nowrap;}
+
+/* TABS */
+.tabs{display:flex;gap:6px;justify-content:center;margin-bottom:12px;flex-wrap:wrap;}
+.tab{padding:7px 15px;border-radius:99px;border:2px solid var(--card3);background:var(--card);
+  color:var(--muted);font-family:'Nunito',sans-serif;font-weight:800;font-size:0.78rem;
+  cursor:pointer;transition:all .2s;min-height:36px;}
+.tab.active,.tab:hover{border-color:var(--acc5);color:var(--acc5);background:rgba(96,165,250,.1);}
+
+/* CARD */
+.card{background:var(--card);border-radius:var(--r);padding:20px 18px;
+  border:1px solid rgba(255,255,255,.05);box-shadow:0 20px 60px rgba(0,0,0,.5);
+  position:relative;overflow:hidden;}
+.card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--acc2),var(--acc1),var(--acc3),var(--acc4));}
+
+/* STREAK */
+.streak{display:flex;gap:6px;justify-content:center;margin-bottom:10px;}
+.sd{width:11px;height:11px;border-radius:50%;background:var(--card2);
+  border:2px solid rgba(255,255,255,.08);transition:all .3s;}
+.sd.on{background:var(--acc1);border-color:var(--acc1);box-shadow:0 0 8px var(--acc1);}
+
+/* LIPS */
+.lips-stage{display:flex;flex-direction:column;align-items:center;gap:5px;margin-bottom:14px;}
+.lips-wrap{width:240px;height:120px;background:var(--card2);border-radius:18px;
+  border:2px solid rgba(255,255,255,.07);display:flex;align-items:center;
+  justify-content:center;overflow:hidden;position:relative;}
+.lips-wrap::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at center,rgba(255,255,255,.03) 0%,transparent 70%);}
+.lips-svg{width:220px;height:100px;
+  filter:drop-shadow(0 0 14px var(--glow,#fbbf24));transition:filter .4s;}
+.ipa-src{font-size:0.6rem;color:var(--muted);font-style:italic;text-align:center;}
+.ipa-src a{color:var(--acc5);text-decoration:none;}
+
+/* LETTER */
+.letter-area{text-align:center;margin-bottom:10px;}
+.big-letter{font-family:'Fredoka One',cursive;font-size:5.5rem;line-height:1;
+  background:linear-gradient(135deg,var(--lc1,#fbbf24),var(--lc2,#f87171));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:pop .4s cubic-bezier(.34,1.56,.64,1);}
+@keyframes pop{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+.type-tag{display:inline-block;margin-top:3px;padding:2px 11px;border-radius:99px;
+  font-size:0.68rem;font-weight:900;letter-spacing:1.5px;text-transform:uppercase;}
+.vowel-tag{background:rgba(251,191,36,.1);color:var(--acc1);border:1px solid var(--acc1);}
+.cons-tag{background:rgba(167,139,250,.1);color:var(--acc4);border:1px solid var(--acc4);}
+.word-tag{background:rgba(52,211,153,.1);color:var(--acc3);border:1px solid var(--acc3);}
+
+/* PHONETIC */
+.phon{text-align:center;color:var(--muted);font-size:.82rem;font-weight:600;margin-bottom:7px;}
+.phon code{background:var(--card2);padding:2px 8px;border-radius:6px;
+  color:var(--text);font-family:monospace;font-size:.9rem;}
+
+/* ARTICULATION */
+.artic{background:var(--card2);border-radius:10px;padding:8px 12px;margin-bottom:10px;
+  font-size:0.73rem;color:var(--muted);line-height:1.5;border-left:3px solid var(--acc5);}
+.artic strong{color:var(--acc5);}
+
+/* WORD CHIPS */
+.chips{display:flex;gap:6px;justify-content:center;margin-bottom:10px;}
+.chip{width:46px;height:46px;border-radius:10px;display:flex;align-items:center;
+  justify-content:center;font-family:'Fredoka One',cursive;font-size:1.5rem;
+  border:2px solid transparent;transition:all .3s;}
+.chip-v{background:rgba(251,191,36,.12);color:var(--acc1);border-color:rgba(251,191,36,.3);}
+.chip-c{background:rgba(167,139,250,.12);color:var(--acc4);border-color:rgba(167,139,250,.3);}
+.chip-hi{transform:scale(1.2);box-shadow:0 0 16px currentColor;}
+
+/* VIBRATION */
+.vib-card{background:var(--card2);border-radius:11px;padding:8px 13px;
+  text-align:center;margin-bottom:10px;border:1px solid rgba(255,255,255,.04);}
+.vib-title{font-size:0.62rem;text-transform:uppercase;letter-spacing:1.5px;font-weight:900;margin-bottom:5px;}
+.vib-bars{display:flex;gap:3px;justify-content:center;align-items:flex-end;height:22px;}
+.vb{width:6px;border-radius:3px;
+  animation:va var(--sp,.6s) ease-in-out infinite alternate;
+  animation-delay:var(--dl,0s);}
+@keyframes va{from{transform:scaleY(.2);opacity:.3}to{transform:scaleY(1);opacity:1}}
+.vib-lbl{font-size:0.62rem;color:var(--muted);margin-top:4px;}
+
+/* ─── MIC AREA ─── */
+.mic-section{display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:12px;}
+
+/* Status strip */
+.mic-strip{width:100%;display:flex;align-items:center;gap:8px;
+  background:var(--card2);border-radius:10px;padding:8px 12px;
+  border:1px solid rgba(255,255,255,.05);}
+.mic-dot{width:9px;height:9px;border-radius:50%;background:var(--muted);
+  flex-shrink:0;transition:background .3s,box-shadow .3s;}
+.mic-dot.ready{background:var(--acc3);box-shadow:0 0 7px var(--acc3);}
+.mic-dot.rec{background:var(--acc2);box-shadow:0 0 7px var(--acc2);
+  animation:blink .5s ease-in-out infinite alternate;}
+.mic-dot.err{background:var(--acc2);}
+@keyframes blink{to{opacity:.2;}}
+.mic-txt{font-size:0.75rem;font-weight:700;color:var(--muted);flex:1;line-height:1.3;}
+.mic-txt.ready{color:var(--acc3);}
+.mic-txt.rec{color:var(--acc2);}
+
+/* Level meter */
+.lvl-bar{width:100%;height:6px;background:var(--card3);border-radius:99px;
+  overflow:hidden;opacity:0;transition:opacity .3s;}
+.lvl-bar.on{opacity:1;}
+.lvl-fill{height:100%;border-radius:99px;
+  background:linear-gradient(90deg,var(--acc3),var(--acc1),var(--acc2));
+  width:0%;transition:width .04s;}
+
+/* Big mic button */
+.mic-btn{
+  width:74px;height:74px;border-radius:50%;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:1.9rem;
+  background:linear-gradient(135deg,var(--acc2),#fb923c);
+  box-shadow:0 5px 24px rgba(248,113,113,.4);
+  transition:transform .15s,box-shadow .15s;
+  position:relative;
+  /* Make easy to tap on mobile */
+  touch-action:manipulation;
+}
+.mic-btn:active{transform:scale(.93);}
+.mic-btn:disabled{opacity:.4;cursor:not-allowed;}
+.mic-btn.rec{
+  animation:pulseMic 1s ease-in-out infinite;
+  background:linear-gradient(135deg,#ef4444,var(--acc2));
+}
+@keyframes pulseMic{
+  0%,100%{box-shadow:0 5px 24px rgba(239,68,68,.4);transform:scale(1);}
+  50%{box-shadow:0 5px 48px rgba(239,68,68,.7);transform:scale(1.05);}
+}
+.mic-ring{position:absolute;inset:-6px;border-radius:50%;
+  border:2px solid rgba(239,68,68,.4);animation:ring 1s ease-out infinite;display:none;}
+.mic-btn.rec .mic-ring{display:block;}
+@keyframes ring{to{transform:scale(1.6);opacity:0;}}
+.mic-hint{font-size:0.7rem;color:var(--muted);font-weight:700;text-align:center;}
+
+/* ─── HEARD BOX ─── */
+.heard-box{width:100%;background:var(--card2);border-radius:10px;
+  padding:10px 13px;border:2px solid rgba(255,255,255,.05);
+  margin-bottom:10px;min-height:50px;transition:all .3s;
+  display:flex;flex-direction:column;gap:2px;}
+.heard-label{font-size:0.6rem;text-transform:uppercase;letter-spacing:2px;
+  font-weight:900;color:var(--muted);}
+.heard-text{font-size:1.05rem;font-weight:800;}
+.heard-box.correct{border-color:var(--acc3);background:rgba(52,211,153,.07);}
+.heard-box.correct .heard-text{color:var(--acc3);}
+.heard-box.wrong{border-color:var(--acc2);background:rgba(248,113,113,.07);}
+.heard-box.wrong .heard-text{color:var(--acc2);}
+
+/* ─── RESULT BANNER ─── */
+.result-banner{width:100%;border-radius:11px;padding:11px 14px;
+  margin-bottom:12px;display:none;animation:fadeUp .3s ease;
+  flex-direction:column;gap:3px;text-align:center;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+.result-banner.correct{display:flex;background:rgba(52,211,153,.1);
+  color:var(--acc3);border:2px solid var(--acc3);}
+.result-banner.wrong{display:flex;background:rgba(248,113,113,.08);
+  color:var(--acc2);border:2px solid var(--acc2);}
+.r-emoji{font-size:1.5rem;}
+.r-msg{font-size:1rem;font-weight:900;}
+.r-detail{font-size:0.72rem;font-weight:700;opacity:.75;}
+
+/* ERR */
+.err-box{background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.3);
+  border-radius:9px;padding:8px 11px;font-size:0.74rem;color:var(--acc1);
+  text-align:center;margin-bottom:9px;display:none;line-height:1.5;}
+.err-box.on{display:block;}
+
+/* TIP */
+.tip{background:rgba(96,165,250,.05);border:1px solid rgba(96,165,250,.12);
+  border-radius:9px;padding:7px 10px;font-size:0.7rem;color:var(--muted);
+  text-align:center;margin-bottom:10px;line-height:1.5;}
+.tip strong{color:var(--acc5);}
+
+/* BUTTONS */
+.btn-row{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;}
+.btn{padding:9px 20px;border-radius:99px;border:none;cursor:pointer;
+  font-family:'Nunito',sans-serif;font-weight:900;font-size:.82rem;
+  transition:all .2s;touch-action:manipulation;min-height:40px;}
+.btn:disabled{opacity:.35;cursor:not-allowed;}
+.btn-skip{background:var(--card2);color:var(--muted);border:2px solid rgba(255,255,255,.07);}
+.btn-skip:hover{background:rgba(255,255,255,.07);color:var(--text);}
+.btn-retry{background:linear-gradient(135deg,var(--acc1),#f59e0b);color:#0b1220;}
+.btn-next{background:linear-gradient(135deg,var(--acc3),#10b981);color:#0b1220;}
+.btn-next:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 6px 20px rgba(52,211,153,.3);}
+
+/* LEGEND */
+.legend{display:flex;gap:12px;justify-content:center;margin-top:12px;flex-wrap:wrap;}
+.leg{display:flex;align-items:center;gap:4px;font-size:0.7rem;color:var(--muted);font-weight:700;}
+.ldot{width:8px;height:8px;border-radius:50%;}
+
+/* CONFETTI */
+#cel{position:fixed;inset:0;pointer-events:none;z-index:200;display:none;}
+#cel.on{display:block;}
+.cp{position:absolute;border-radius:3px;animation:cf var(--d) ease-in forwards;}
+@keyframes cf{0%{transform:translate(var(--x),-40px) rotate(0);opacity:1;}
+  100%{transform:translate(var(--x2),110vh) rotate(720deg);opacity:0;}}
+
+/* MOBILE responsive */
+@media(max-width:420px){
+  .big-letter{font-size:4.2rem;}
+  .lips-wrap{width:200px;height:100px;}
+  .lips-svg{width:185px;height:88px;}
+  .card{padding:16px 12px;}
+  .logo{font-size:1.9rem;}
+}
+</style>
+</head>
+<body>
+<div id="cel"></div>
+<div class="wrap">
+
+<header>
+  <div class="logo">🔊 SpeakUp</div>
+  <div class="tagline">Speech Rehabilitation · Learn · Practice · Speak</div>
+</header>
+
+<div class="hud">
+  <div class="hud-score">⭐ <span id="scoreNum">0</span></div>
+  <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+  <div class="hud-level" id="levelLbl">🌱 Beginner</div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="setMode('vowels')">🔴 Vowels</button>
+  <button class="tab" onclick="setMode('consonants')">🟣 Consonants</button>
+  <button class="tab" onclick="setMode('words')">🟢 CVC Words</button>
+</div>
+
+<div class="card">
+  <div class="streak" id="streakBar"></div>
+
+  <!-- Lips only -->
+  <div class="lips-stage">
+    <div class="lips-wrap">
+      <svg id="lipsSvg" class="lips-svg" viewBox="0 0 220 100" xmlns="http://www.w3.org/2000/svg">
+        <g id="lg"></g>
+      </svg>
+    </div>
+    <div class="ipa-src">
+      Lip shapes: <a href="https://www.seeingspeech.ac.uk/ipa-charts/" target="_blank">Seeing Speech · Univ. of Glasgow (IPA)</a>
+      · <a href="https://www.tandfonline.com/doi/full/10.1080/17501229.2016.1165230" target="_blank">Lawson et al. 2018</a>
+    </div>
+  </div>
+
+  <div class="letter-area">
+    <div class="big-letter" id="bigLetter">A</div>
+    <span class="type-tag vowel-tag" id="typeTag">Vowel</span>
+  </div>
+
+  <div class="phon" id="phonHint">Say: <code>/æ/</code></div>
+  <div class="artic" id="articGuide"></div>
+  <div class="chips" id="chips" style="display:none"></div>
+
+  <div class="vib-card">
+    <div class="vib-title" style="color:var(--acc1)">🖐 Feel on your throat</div>
+    <div class="vib-bars" id="vibBars"></div>
+    <div class="vib-lbl" id="vibLbl"></div>
+  </div>
+
+  <div class="tip">
+    <strong>💡 How to use:</strong> Study the lip shape → feel the vibration on your throat → tap <strong>🎤</strong> and say the <strong>sound</strong> (not the letter name!).
+    <br>A = <em>"Ah"</em> &nbsp;E = <em>"Eh"</em> &nbsp;I = <em>"Ih"</em> &nbsp;O = <em>"Oh"</em> &nbsp;U = <em>"Uh"</em>
+    <br>First tap asks for mic permission — please allow it!
+  </div>
+
+  <div class="err-box" id="errBox"></div>
+
+  <!-- MIC -->
+  <div class="mic-section">
+    <div class="mic-strip">
+      <div class="mic-dot" id="micDot"></div>
+      <div class="mic-txt" id="micTxt">Tap 🎤 to begin — mic starts on first tap</div>
+    </div>
+    <div class="lvl-bar" id="lvlBar"><div class="lvl-fill" id="lvlFill"></div></div>
+    <button class="mic-btn" id="micBtn" onclick="handleMic()">
+      <div class="mic-ring"></div>🎤
+    </button>
+    <div class="mic-hint" id="micHint">Tap to speak</div>
+  </div>
+
+  <!-- What was heard -->
+  <div class="heard-box" id="heardBox">
+    <div class="heard-label">You said</div>
+    <div class="heard-text" id="heardText" style="color:var(--muted);font-size:.82rem">— tap 🎤 then speak —</div>
+  </div>
+
+  <!-- Result -->
+  <div class="result-banner" id="resultBanner">
+    <div class="r-emoji" id="rEmoji"></div>
+    <div class="r-msg" id="rMsg"></div>
+    <div class="r-detail" id="rDetail"></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-skip" onclick="doSkip()">↩ Skip</button>
+    <button class="btn btn-retry" onclick="doRetry()">🔄 Try Again</button>
+    <button class="btn btn-next" id="nextBtn" onclick="doNext()" disabled>Next →</button>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="leg"><div class="ldot" style="background:var(--acc1)"></div>Vowel</div>
+  <div class="leg"><div class="ldot" style="background:var(--acc4)"></div>Consonant</div>
+  <div class="leg"><div class="ldot" style="background:var(--acc3)"></div>CVC Word</div>
+</div>
+</div><!-- /wrap -->
+
+<script>
+/* ═══════════════════════════════════════════════
+   PHONEME DATA
+   IPA sources:
+   · Seeing Speech (Lawson et al., 2018)
+   · IPA Handbook (IPA, 1999)
+   · Ladefoged & Johnson, "A Course in Phonetics" (2010)
+═══════════════════════════════════════════════ */
+const DATA = {
+  vowels:[
+    { char:'A', ipa:'/æ/', sound:'"Ah"', colors:['#fbbf24','#f59e0b'], shape:'A_open', vib:'long',
+      hint:'Say "Ah" — jaw wide open, mouth relaxed',
+      artic:'<strong>IPA /æ/ · Short vowel "Ah" as in "cat", "bat", "mat".</strong> Drop your jaw to maximum openness. Tongue stays low and flat inside the mouth. Lips spread wide and relaxed — not rounded. Say it short and open: <em>"Ah!"</em>. Feel the open vibration in your chest.' },
+    { char:'E', ipa:'/ɛ/', sound:'"Eh"', colors:['#f87171','#ef4444'], shape:'I_mid', vib:'long',
+      hint:'Say "Eh" — mid-open mouth, relaxed lips',
+      artic:'<strong>IPA /ɛ/ · Short vowel "Eh" as in "bed", "set", "red".</strong> Mouth opens to a medium width. Tongue is mid-low and slightly forward. Lips are relaxed and slightly spread — not pulled back into a full smile, not rounded. Say it short: <em>"Eh!"</em>. Like the sound of hesitation.' },
+    { char:'I', ipa:'/ɪ/', sound:'"Ih"', colors:['#34d399','#10b981'], shape:'E_smile', vib:'long',
+      hint:'Say "Ih" — small mouth opening, lips slightly spread',
+      artic:'<strong>IPA /ɪ/ · Short vowel "Ih" as in "sit", "big", "fish".</strong> Mouth opens only slightly. Tongue is high and near the front of the mouth. Lips are loosely spread — like a relaxed, small smile. Say it short and crisp: <em>"Ih!"</em>. Not the long "ee" — keep it very brief.' },
+    { char:'O', ipa:'/ɒ/', sound:'"Oh"', colors:['#a78bfa','#7c3aed'], shape:'O_round', vib:'long',
+      hint:'Say "Oh" — lips round into a circle',
+      artic:'<strong>IPA /ɒ/ · Short vowel "Oh" as in "hot", "dot", "clock".</strong> Jaw drops open. Lips form a relaxed round circle — not tightly puckered, just naturally rounded. Back of tongue is low. Say it short and open: <em>"Oh!"</em>. Like a gentle surprise.' },
+    { char:'U', ipa:'/ʌ/', sound:'"Uh"', colors:['#fb923c','#f97316'], shape:'A_open', vib:'long',
+      hint:'Say "Uh" — jaw relaxed, mouth slightly open',
+      artic:'<strong>IPA /ʌ/ · Short vowel "Uh" as in "sun", "mud", "cup".</strong> Mouth opens to a mid-low position. Tongue is in a neutral, central position — not pushed forward or back. Lips are relaxed and unrounded. Say it short and neutral: <em>"Uh!"</em>. Like the sound of thinking.' },
+  ],
+  consonants:[
+    { char:'B', ipa:'/b/', sound:'"Buh"', colors:['#a78bfa','#7c3aed'], shape:'B_closed', vib:'short',
+      hint:'Say "Buh" — press lips together then pop open',
+      artic:'<strong>IPA /b/ · "Buh" as in "bat", "bed", "big".</strong> Both lips press firmly together — seal all air. Build pressure behind the seal, then release with a sudden burst. Vocal cords vibrate throughout — place a finger on your throat to feel the buzz. Keep it very short: just the burst, no "uh" after.' },
+    { char:'D', ipa:'/d/', sound:'"Duh"', colors:['#60a5fa','#3b82f6'], shape:'D_teeth', vib:'short',
+      hint:'Say "Duh" — tongue tip taps behind upper teeth',
+      artic:'<strong>IPA /d/ · "Duh" as in "dot", "dog", "bed".</strong> Tongue tip taps the alveolar ridge — the bumpy gum just behind your upper front teeth. Build air briefly, then release with the tongue. Vocal cords vibrate. Keep it short: just the tap sound.' },
+    { char:'M', ipa:'/m/', sound:'"Mmm"', colors:['#f87171','#ef4444'], shape:'M_sealed', vib:'short',
+      hint:'Say "Mmm" — lips sealed, hum through your nose',
+      artic:'<strong>IPA /m/ · "Mmm" as in "mat", "mud", "mom".</strong> Lips are completely sealed shut. All sound exits through the nose. Vocal cords vibrate creating a nasal hum — feel it buzz in your nose and lips. Sustain the "mmmm" then release.' },
+    { char:'S', ipa:'/s/', sound:'"Sss"', colors:['#fbbf24','#f59e0b'], shape:'S_narrow', vib:'short',
+      hint:'Say "Sss" — hiss air through nearly closed teeth',
+      artic:'<strong>IPA /s/ · "Sss" as in "sun", "sit", "bus".</strong> Tongue tip approaches the ridge behind upper teeth without full contact. Bring upper and lower teeth close together. Stream air through the narrow gap to produce a continuous hiss. No vocal cord vibration — it is a pure air sound.' },
+  ],
+  words:[
+    { char:'BAT', ipa:'/bæt/', sound:'"Bat"', colors:['#f87171','#a78bfa'], letters:['B','A','T'], types:['c','v','c'], shape:'A_open',   vib:'mixed', hint:'Buh·Ah·T', artic:'<strong>BAT /bæt/</strong> — "Buh" (lips pop) + "Ah" (jaw drops wide) + silent T tap. Say it as one word: <em>bat</em>. Feel lips pop, jaw open wide, tongue tap the ridge.' },
+    { char:'MAT', ipa:'/mæt/', sound:'"Mat"', colors:['#34d399','#fbbf24'], letters:['M','A','T'], types:['c','v','c'], shape:'A_open',   vib:'mixed', hint:'Mmm·Ah·T', artic:'<strong>MAT /mæt/</strong> — "Mmm" (lips sealed hum) + "Ah" (jaw drops wide) + silent T tap. Say it as one word: <em>mat</em>.' },
+    { char:'SUN', ipa:'/sʌn/', sound:'"Sun"', colors:['#fbbf24','#fb923c'], letters:['S','U','N'], types:['c','v','c'], shape:'A_open',   vib:'mixed', hint:'Sss·Uh·N', artic:'<strong>SUN /sʌn/</strong> — "Sss" (hiss) + "Uh" (neutral mid-open) + N (tongue tip). Say it as one word: <em>sun</em>.' },
+    { char:'TAP', ipa:'/tæp/', sound:'"Tap"', colors:['#a78bfa','#34d399'], letters:['T','A','P'], types:['c','v','c'], shape:'A_open',   vib:'mixed', hint:'T·Ah·P', artic:'<strong>TAP /tæp/</strong> — T tap + "Ah" (jaw wide) + P (lips close). Say it as one word: <em>tap</em>.' },
+    { char:'BED', ipa:'/bɛd/', sound:'"Bed"', colors:['#f87171','#fbbf24'], letters:['B','E','D'], types:['c','v','c'], shape:'I_mid',    vib:'mixed', hint:'Buh·Eh·D', artic:'<strong>BED /bɛd/</strong> — "Buh" (lips pop) + "Eh" (mid-open) + "D" (tongue tap). Say it as one word: <em>bed</em>.' },
+    { char:'MUD', ipa:'/mʌd/', sound:'"Mud"', colors:['#60a5fa','#a78bfa'], letters:['M','U','D'], types:['c','v','c'], shape:'A_open',   vib:'mixed', hint:'Mmm·Uh·D', artic:'<strong>MUD /mʌd/</strong> — "Mmm" (nasal hum) + "Uh" (neutral) + "D" (voiced tap). Say it as one word: <em>mud</em>.' },
+    { char:'SIT', ipa:'/sɪt/', sound:'"Sit"', colors:['#fbbf24','#f87171'], letters:['S','I','T'], types:['c','v','c'], shape:'E_smile',  vib:'mixed', hint:'Sss·Ih·T', artic:'<strong>SIT /sɪt/</strong> — "Sss" (hiss) + "Ih" (high-front, small opening) + T tap. Say it as one word: <em>sit</em>.' },
+    { char:'DOT', ipa:'/dɒt/', sound:'"Dot"', colors:['#34d399','#60a5fa'], letters:['D','O','T'], types:['c','v','c'], shape:'O_round',  vib:'mixed', hint:'Duh·Oh·T', artic:'<strong>DOT /dɒt/</strong> — "Duh" (tongue tap) + "Oh" (round lips) + T tap. Say it as one word: <em>dot</em>.' },
+  ]
+};
+
+/* ═══════════════════════
+   LIP SHAPES (viewBox 0 0 220 100)
+   IPA articulatory — lips only, no face
+═══════════════════════ */
+const LIPS = {
+  A_open:`
+    <ellipse cx="110" cy="60" rx="68" ry="28" fill="#d4846a"/>
+    <path d="M46 52 Q78 38 104 46 Q110 38 116 46 Q142 38 174 52" fill="#c8705a" stroke="#a85440" stroke-width="1.2"/>
+    <path d="M46 52 Q110 82 174 52 Q150 92 110 95 Q70 92 46 52" fill="#d4785a"/>
+    <path d="M56 58 Q110 78 164 58 Q158 70 110 74 Q62 70 56 58" fill="#130303"/>
+    <ellipse cx="110" cy="69" rx="36" ry="9" fill="#c23838" opacity=".82"/>
+    <rect x="72" y="53" width="18" height="12" fill="white" rx="2.5" opacity=".95"/>
+    <rect x="93" y="53" width="18" height="12" fill="white" rx="2.5" opacity=".95"/>
+    <rect x="114" y="53" width="18" height="12" fill="white" rx="2.5" opacity=".95"/>
+    <rect x="135" y="53" width="18" height="12" fill="white" rx="2.5" opacity=".95"/>
+    <path d="M46 52 Q110 56 174 52" fill="none" stroke="#a85440" stroke-width="1.5" stroke-linecap="round"/>
+    <circle cx="46" cy="52" r="4" fill="#b87060"/><circle cx="174" cy="52" r="4" fill="#b87060"/>
+  `,
+  E_smile:`
+    <path d="M42 46 Q110 34 178 46" fill="none" stroke="#c07060" stroke-width="1.5"/>
+    <path d="M42 46 Q110 40 178 46 Q178 53 110 55 Q42 53 42 46" fill="#c8705a"/>
+    <path d="M42 55 Q110 60 178 55 Q172 72 110 76 Q48 72 42 55" fill="#d4785a"/>
+    <path d="M50 54 Q110 58 170 54 Q166 64 110 67 Q54 64 50 54" fill="#130303"/>
+    <rect x="62" y="50" width="18" height="9" fill="white" rx="2" opacity=".98"/>
+    <rect x="83" y="50" width="18" height="9" fill="white" rx="2" opacity=".98"/>
+    <rect x="104" y="50" width="18" height="9" fill="white" rx="2" opacity=".98"/>
+    <rect x="125" y="50" width="18" height="9" fill="white" rx="2" opacity=".98"/>
+    <rect x="146" y="50" width="18" height="9" fill="white" rx="2" opacity=".95"/>
+    <path d="M42 55 Q110 57 178 55" fill="none" stroke="#8a4430" stroke-width="1.2"/>
+    <circle cx="42" cy="50" r="5" fill="#b87060"/><circle cx="178" cy="50" r="5" fill="#b87060"/>
+  `,
+  I_mid:`
+    <ellipse cx="110" cy="56" rx="65" ry="22" fill="#d4846a"/>
+    <path d="M50 48 Q76 37 102 44 Q110 37 118 44 Q144 37 170 48" fill="#c8705a" stroke="#a85440" stroke-width="1.2"/>
+    <path d="M50 48 Q110 72 170 48 Q146 83 110 86 Q74 83 50 48" fill="#d4785a"/>
+    <path d="M60 53 Q110 69 160 53 Q153 63 110 67 Q67 63 60 53" fill="#130303"/>
+    <ellipse cx="110" cy="63" rx="32" ry="8" fill="#c23838" opacity=".78"/>
+    <rect x="80" y="48" width="17" height="11" fill="white" rx="2.5" opacity=".95"/>
+    <rect x="100" y="48" width="17" height="11" fill="white" rx="2.5" opacity=".95"/>
+    <rect x="120" y="48" width="17" height="11" fill="white" rx="2.5" opacity=".95"/>
+    <path d="M50 48 Q110 52 170 48" fill="none" stroke="#a85440" stroke-width="1.4"/>
+    <circle cx="50" cy="48" r="4" fill="#b87060"/><circle cx="170" cy="48" r="4" fill="#b87060"/>
+  `,
+  O_round:`
+    <ellipse cx="110" cy="50" rx="62" ry="22" fill="#d4846a"/>
+    <path d="M60 35 Q110 20 160 35 Q170 44 170 54 Q165 42 160 38 Q110 25 60 38 Q55 42 50 54 Q50 44 60 35" fill="#c8705a"/>
+    <path d="M50 54 Q50 76 110 84 Q170 76 170 54 Q164 70 110 76 Q56 70 50 54" fill="#d4785a"/>
+    <ellipse cx="110" cy="54" rx="48" ry="16" fill="none" stroke="#a85440" stroke-width="1.5"/>
+    <ellipse cx="110" cy="57" rx="24" ry="20" fill="#130303"/>
+    <ellipse cx="110" cy="61" rx="16" ry="13" fill="#060000"/>
+    <circle cx="62" cy="54" r="6" fill="#b07060"/><circle cx="158" cy="54" r="6" fill="#b07060"/>
+  `,
+  U_pucker:`
+    <ellipse cx="110" cy="52" rx="54" ry="30" fill="#c8705a"/>
+    <ellipse cx="110" cy="52" rx="40" ry="22" fill="#b86050"/>
+    <path d="M92 36 Q88 52 92 68" stroke="#9a5040" stroke-width="1.5" fill="none" opacity=".6"/>
+    <path d="M103 33 Q99 52 103 71" stroke="#9a5040" stroke-width="1.2" fill="none" opacity=".5"/>
+    <path d="M128 33 Q132 52 128 71" stroke="#9a5040" stroke-width="1.2" fill="none" opacity=".5"/>
+    <path d="M128 36 Q132 52 128 68" stroke="#9a5040" stroke-width="1.5" fill="none" opacity=".6"/>
+    <ellipse cx="110" cy="52" rx="14" ry="16" fill="#130303"/>
+    <ellipse cx="110" cy="54" rx="8" ry="10" fill="#060000"/>
+    <circle cx="70" cy="52" r="7" fill="#a86050"/><circle cx="150" cy="52" r="7" fill="#a86050"/>
+  `,
+  B_closed:`
+    <path d="M50 42 Q80 32 104 39 Q110 32 116 39 Q140 32 170 42 Q170 50 110 52 Q50 50 50 42" fill="#d4846a"/>
+    <path d="M50 42 Q80 34 104 41 Q110 34 116 41 Q140 34 170 42" fill="none" stroke="#c07060" stroke-width="1.5"/>
+    <path d="M50 52 Q110 57 170 52 Q167 68 110 72 Q53 68 50 52" fill="#d4785a"/>
+    <path d="M50 47 Q110 51 170 47" fill="none" stroke="#6a2010" stroke-width="3" stroke-linecap="round"/>
+    <path d="M50 47 Q110 49 170 47 Q170 52 110 54 Q50 52 50 47" fill="#c07060"/>
+    <path d="M86 47 Q86 52 86 57" stroke="#a86050" stroke-width="1" fill="none" opacity=".45"/>
+    <path d="M110 47 Q110 52 110 57" stroke="#a86050" stroke-width="1" fill="none" opacity=".45"/>
+    <path d="M134 47 Q134 52 134 57" stroke="#a86050" stroke-width="1" fill="none" opacity=".45"/>
+    <circle cx="50" cy="47" r="5" fill="#b07060"/><circle cx="170" cy="47" r="5" fill="#b07060"/>
+  `,
+  D_teeth:`
+    <path d="M54 44 Q80 34 104 42 Q110 35 116 42 Q140 34 166 44 Q166 51 110 53 Q54 51 54 44" fill="#d4846a"/>
+    <path d="M54 53 Q110 65 166 53 Q160 72 110 76 Q60 72 54 53" fill="#d4785a"/>
+    <path d="M62 52 Q110 63 158 52 Q153 61 110 65 Q67 61 62 52" fill="#130303"/>
+    <rect x="74" y="48" width="16" height="9" fill="white" rx="2" opacity=".95"/>
+    <rect x="93" y="48" width="16" height="9" fill="white" rx="2" opacity=".95"/>
+    <rect x="112" y="48" width="16" height="9" fill="white" rx="2" opacity=".95"/>
+    <rect x="131" y="48" width="16" height="9" fill="white" rx="2" opacity=".95"/>
+    <path d="M84 61 Q110 57 136 61 Q126 66 110 63 Q94 66 84 61" fill="#d4506a" opacity=".82"/>
+    <path d="M80 57 Q110 55 140 57" stroke="#c24050" stroke-width="1.5" fill="none" stroke-dasharray="3,2" opacity=".55"/>
+    <path d="M54 52 Q110 55 166 52" fill="none" stroke="#a85440" stroke-width="1.3"/>
+    <circle cx="54" cy="48" r="4" fill="#b87060"/><circle cx="166" cy="48" r="4" fill="#b87060"/>
+  `,
+  M_sealed:`
+    <path d="M48 40 Q78 30 103 37 Q110 30 117 37 Q142 30 172 40 Q172 49 110 51 Q48 49 48 40" fill="#d4846a"/>
+    <path d="M48 51 Q110 56 172 51 Q169 68 110 72 Q51 68 48 51" fill="#d4785a"/>
+    <path d="M48 46 Q110 50 172 46" fill="none" stroke="#5a1808" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M48 46 Q110 48 172 46 Q172 51 110 53 Q48 51 48 46" fill="#c07060"/>
+    <path d="M98 30 Q104 26 110 30 Q116 26 122 30" stroke="#fbbf24" stroke-width="1.5" fill="none" opacity=".35" stroke-dasharray="2,3"/>
+    <path d="M102 24 Q106 20 110 24 Q114 20 118 24" stroke="#fbbf24" stroke-width="1" fill="none" opacity=".22" stroke-dasharray="2,3"/>
+    <circle cx="48" cy="46" r="5" fill="#b07060"/><circle cx="172" cy="46" r="5" fill="#b07060"/>
+  `,
+  S_narrow:`
+    <path d="M52 42 Q78 32 102 40 Q110 33 118 40 Q142 32 168 42 Q168 49 110 51 Q52 49 52 42" fill="#d4846a"/>
+    <path d="M52 51 Q110 58 168 51 Q163 66 110 70 Q57 66 52 51" fill="#d4785a"/>
+    <path d="M60 50 Q110 55 160 50 Q156 58 110 61 Q64 58 60 50" fill="#130303"/>
+    <rect x="68" y="46" width="15" height="8" fill="white" rx="1.5" opacity=".98"/>
+    <rect x="86" y="46" width="15" height="8" fill="white" rx="1.5" opacity=".98"/>
+    <rect x="104" y="46" width="15" height="8" fill="white" rx="1.5" opacity=".98"/>
+    <rect x="122" y="46" width="15" height="8" fill="white" rx="1.5" opacity=".98"/>
+    <rect x="140" y="46" width="15" height="8" fill="white" rx="1.5" opacity=".95"/>
+    <rect x="74" y="55" width="12" height="5" fill="#d8d8d0" rx="1" opacity=".5"/>
+    <rect x="89" y="55" width="12" height="5" fill="#d8d8d0" rx="1" opacity=".5"/>
+    <rect x="104" y="55" width="12" height="5" fill="#d8d8d0" rx="1" opacity=".5"/>
+    <rect x="119" y="55" width="12" height="5" fill="#d8d8d0" rx="1" opacity=".5"/>
+    <path d="M68 51 Q110 53 160 51" stroke="#060000" stroke-width="1.5" fill="none"/>
+    <path d="M52 51 Q110 54 168 51" fill="none" stroke="#a85440" stroke-width="1.2"/>
+    <circle cx="52" cy="47" r="4" fill="#b87060"/><circle cx="168" cy="47" r="4" fill="#b87060"/>
+  `
+};
+
+/* ═══════════════════════════════════════════════════════════
+   PHONEME RECOGNITION MAPS
+   The core problem: speech recognition returns WORDS like
+   "ay", "bee", "em", "es" for letters, not the letter itself.
+
+   We map EVERY plausible thing speech-to-text returns for
+   each target phoneme, including:
+   - The letter name as spoken aloud (e.g. B → "bee")
+   - The phoneme sound (e.g. /b/ → "buh")
+   - Common mis-recognitions
+   - Alphabet spelling ("the letter b")
+   - For vowels: the letter name + the IPA sound
+═══════════════════════════════════════════════════════════ */
+const PHONEME_MAP = {
+  /*
+   * SHORT VOWEL PHONICS SOUNDS (as taught in literacy & speech therapy)
+   * Users say the SHORT sound, NOT the letter name.
+   * A = /æ/ "Ah"   (as in cat, bat, mat)
+   * E = /ɛ/ "Eh"   (as in bed, set, red)
+   * I = /ɪ/ "Ih"   (as in sit, big, fish)
+   * O = /ɒ/ "Oh"   (as in hot, dot, clock)
+   * U = /ʌ/ "Uh"   (as in sun, mud, cup)
+   *
+   * Speech recognisers hear these short bursts as:
+   */
+  'a': {
+    // /æ/ "Ah" — STT hears open-mouth sounds
+    exact: ['a','ah','aa'],
+    soundsLike: ['aah','aw','ha','bah','ma','pa','la','ra','da','na','fa','ja','ka','sa','ta','va','wa','xa','ya','za','spa','aha','hah'],
+    letterName: ['short a','the letter a','vowel a','letter a']
+  },
+  'e': {
+    // /ɛ/ "Eh" — STT hears mid-open sounds; often transcribed as "a", "uh", "the", "eh"
+    exact: ['e','eh','uh'],
+    soundsLike: ['a','the','heh','meh','yeah','yeh','head','said','bread','ebb','end','em','hen','ten','then','when','pen','men','den','ben','ken','zen','net','set','bet','get','jet','let','met','pet','wet','yet'],
+    letterName: ['short e','the letter e','vowel e','letter e']
+  },
+  'i': {
+    // /ɪ/ "Ih" — STT hears short high-front sounds; often "it", "is", "in", "if"
+    exact: ['i','ih','it'],
+    soundsLike: ['is','in','if','ill','id','ig','im','ip','iz','hi','did','bid','bit','big','bin','bit','dig','dim','dip','fig','fin','fit','fix','gig','him','hip','his','hit','jig','kid','kin','kit','lid','lip','lit','mix','nib','nil','nip','nit','pig','pin','pit','rib','rid','rim','rip','sit','six','ski','slim','spin','tip','tin','wit','wig','win','zip'],
+    letterName: ['short i','the letter i','vowel i','letter i']
+  },
+  'o': {
+    // /ɒ/ "Oh" — STT hears open-round sounds; often "oh", "aw", "ah", "of"
+    exact: ['o','oh','aw'],
+    soundsLike: ['of','off','on','op','ox','aw','awe','owe','odd','cop','cot','cod','cog','dog','dot','fog','got','god','hot','hop','hob','jot','job','knob','log','lot','mob','mop','nod','not','pod','pop','pot','rob','rod','rot','sob','sod','top','tom','tot'],
+    letterName: ['short o','the letter o','vowel o','letter o']
+  },
+  'u': {
+    // /ʌ/ "Uh" — STT hears mid-central sounds; often "uh", "a", "the", "huh"
+    exact: ['u','uh','um'],
+    soundsLike: ['huh','duh','buh','muh','up','us','uh','uhh','but','bun','bus','cup','cut','fun','gun','gut','hug','hum','hun','hut','jug','jut','mud','mug','nun','nut','pug','pun','pup','rub','rug','run','rut','sub','sum','sun','tub','tug','tun','yum'],
+    letterName: ['short u','the letter u','vowel u','letter u']
+  },
+
+  /*
+   * CONSONANT PHONICS SOUNDS
+   * Users say the pure burst/hiss sound, not the letter name.
+   * B = /b/ "Buh"  M = /m/ "Mmm"  D = /d/ "Duh"  S = /s/ "Sss"
+   * STT usually hears these as the letter name or the syllable.
+   */
+  'b': {
+    exact: ['b','buh','bah'],
+    soundsLike: ['be','bee','ba','bu','bi','by','bye','boo','bu','buh','beh','bub','hub','rub','pub','sub','tab','cab','lab','jab','dab','cub','tub'],
+    letterName: ['letter b','the letter b','consonant b','buh sound']
+  },
+  'd': {
+    exact: ['d','duh','dah'],
+    soundsLike: ['de','dee','da','du','di','do','doo','deh','dud','did','dim','dip','dot','dog','dig','den','dad'],
+    letterName: ['letter d','the letter d','consonant d','duh sound']
+  },
+  'm': {
+    exact: ['m','mm','mmm','muh'],
+    soundsLike: ['me','ma','mu','mi','mo','moo','em','am','hmm','umm','hm','mhm','uh hm','mmhm','mom','mum','ham','jam','yam','dam','ram','tam','cam'],
+    letterName: ['letter m','the letter m','consonant m','mmm sound']
+  },
+  's': {
+    exact: ['s','ss','sss','suh'],
+    soundsLike: ['se','sa','su','si','so','es','ess','see','sea','his','as','is','us','yes','bus','gas','has','was','pass','class','grass','mass','sass','bass'],
+    letterName: ['letter s','the letter s','consonant s','sss sound']
+  },
+
+  /* CVC WORDS */
+  'bat': { exact:['bat'], soundsLike:['bad','ban','back','batt','bit','bet','bag','ball','cat','flat','hat','mat','pat','rat','sat','that','vat'] },
+  'mat': { exact:['mat'], soundsLike:['mad','map','man','cat','matt','matte','met','bat','fat','hat','pat','rat','sat','flat','nat','tat'] },
+  'sun': { exact:['sun'], soundsLike:['son','fun','run','san','sung','sum','bun','gun','nun','done','one','won','pun','ton','run','hun'] },
+  'tap': { exact:['tap'], soundsLike:['top','nap','tan','tape','rap','cap','gap','lap','sap','zap','map','tab','tag','tad','tan','tat','tax'] },
+  'bed': { exact:['bed'], soundsLike:['bad','bid','red','head','bread','fed','led','shed','dead','bet','set','met','get','jet','let','pet','wet','yet','ted','ned','wed','shed'] },
+  'mud': { exact:['mud'], soundsLike:['mad','bud','had','mudd','mug','cut','gut','hut','nut','rut','bud','dud','spud','stud','thud','crud'] },
+  'sit': { exact:['sit'], soundsLike:['set','bit','hit','sip','kit','fit','lit','pit','wit','six','sin','sill','silk','sift','sigh','did','bid','hid','kid','lid','rid'] },
+  'dot': { exact:['dot'], soundsLike:['dog','got','hot','lot','cot','jot','knot','not','pot','rot','tot','cod','cop','fog','hop','mob','mop','nod','pod','pop','rob','sob','top'] },
+};
+
+function matchTarget(heard, targetKey) {
+  const h = heard.toLowerCase().trim().replace(/[^a-z\s]/g, '');
+  const map = PHONEME_MAP[targetKey];
+  if (!map) return false;
+
+  const words = h.split(/\s+/);
+
+  // 1. Exact word match
+  if (map.exact.includes(h)) return true;
+  for (const w of words) if (map.exact.includes(w)) return true;
+
+  // 2. Letter name match (full phrase like "the letter b")
+  if (map.letterName && map.letterName.some(ln => h.includes(ln))) return true;
+
+  // 3. soundsLike — any word in transcript matches
+  for (const w of words) {
+    if (map.soundsLike.includes(w)) return true;
+    // Levenshtein distance ≤ 1 against any soundsLike
+    for (const s of map.soundsLike) {
+      if (lev(w, s) <= 1) return true;
+    }
+  }
+
+  // 4. For single-letter targets: transcript starts with or contains
+  //    the first letter (handles "ahh", "eee", "ooo" type elongations)
+  if (targetKey.length === 1) {
+    for (const w of words) {
+      if (w.length >= 1 && w[0] === targetKey) return true; // starts with the letter sound
+    }
+  }
+
+  return false;
+}
+
+function lev(a, b) {
+  if (Math.abs(a.length - b.length) > 3) return 99;
+  const dp = Array.from({length: a.length+1}, (_, i) => [i, ...Array(b.length).fill(0)]);
+  for (let j = 0; j <= b.length; j++) dp[0][j] = j;
+  for (let i = 1; i <= a.length; i++)
+    for (let j = 1; j <= b.length; j++)
+      dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1] : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+  return dp[a.length][b.length];
+}
+
+/* ═══════════════════════════════════════
+   STATE
+═══════════════════════════════════════ */
+let mode = 'vowels', idx = 0, score = 0, streak = 0;
+let sr = null, isListening = false, micReady = false;
+let mediaStream = null, audioCtx = null, analyser = null, rafId = null;
+
+/* ═══════════════════════════════════════
+   INIT — render only, NO mic init here
+   Mic is initiated on first tap (mobile compatible)
+═══════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', () => {
+  buildStreak();
+  renderCurrent();
+  setMicUI('idle', 'Tap 🎤 to start — mic activates on first tap');
+});
+
+/* ═══════════════════════════════════════════════════════
+   MIC INIT — called on first button tap (user gesture)
+   This is the ONLY safe way on iOS and Android.
+   getUserMedia MUST be inside a user-gesture handler.
+═══════════════════════════════════════════════════════ */
+async function initMicOnFirstTap() {
+  setMicUI('idle', 'Requesting microphone permission…');
+
+  // Request mic stream — this triggers the OS permission dialog
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        sampleRate: { ideal: 16000 }
+      }
+    });
+  } catch (err) {
+    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+      const msg = '🚫 Mic permission denied.<br>On iPhone: Settings → Safari → Microphone → Allow.<br>On Android: tap the lock icon in your browser address bar → Microphone → Allow.<br>Then reload this page.';
+      showErr(msg);
+      setMicUI('err', 'Mic access denied — see instructions above');
+    } else {
+      showErr('⚠️ Could not access mic: ' + err.message + '. Try reloading.');
+      setMicUI('err', 'Mic error — try reloading');
+    }
+    return false;
+  }
+
+  // Check for SpeechRecognition API
+  const SRA = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SRA) {
+    showErr('⚠️ Your browser does not support speech recognition.<br><strong>On iPhone:</strong> Use Safari (it supports webkitSpeechRecognition).<br><strong>On Android:</strong> Use Chrome.<br><strong>On desktop:</strong> Use Chrome or Edge.');
+    setMicUI('err', 'Browser unsupported — see instructions above');
+    return false;
+  }
+
+  // Build recognition object
+  sr = new SRA();
+  sr.lang = 'en-US';
+  sr.continuous = false;
+  sr.interimResults = true;
+  sr.maxAlternatives = 8; // get many alternatives to maximise matching
+
+  sr.onstart = () => {
+    isListening = true;
+    setMicUI('rec', '🔴 Listening… speak now!');
+    startMeter();
+  };
+
+  sr.onresult = (e) => {
+    const results = Array.from(e.results);
+    const last = results[results.length - 1];
+    const interim = last[0].transcript.trim().toLowerCase();
+    showHeardInterim(interim);
+    if (last.isFinal) {
+      const alts = Array.from(last).map(a => a.transcript.trim().toLowerCase());
+      stopListening();
+      evaluate(interim, alts);
+    }
+  };
+
+  sr.onerror = (e) => {
+    stopListening();
+    if (e.error === 'no-speech') {
+      showResult(null, '🤫 No speech detected', 'Speak louder and closer to the mic, then tap 🎤 again.');
+    } else if (e.error === 'audio-capture') {
+      showErr('Microphone capture failed. Make sure no other app is using it.');
+    } else if (e.error === 'not-allowed') {
+      showErr('Mic access blocked. Please allow microphone and reload.');
+    } else if (e.error === 'network') {
+      showErr('Network error with speech recognition. Check your internet connection.');
+    } else {
+      showResult(null, '⚠️ Error: ' + e.error, 'Please tap 🎤 and try again.');
+    }
+  };
+
+  sr.onend = () => {
+    stopListening();
+  };
+
+  micReady = true;
+  setMicUI('ready', 'Microphone ready ✅ — tap 🎤 to speak');
+  return true;
+}
+
+/* ═══════════════════════
+   MIC BUTTON HANDLER
+═══════════════════════ */
+async function handleMic() {
+  hideErr();
+
+  // First tap — init mic (requires user gesture for mobile)
+  if (!micReady) {
+    const ok = await initMicOnFirstTap();
+    if (!ok) return;
+    // Small delay then auto-start listening
+    setTimeout(startListening, 400);
+    return;
+  }
+
+  if (isListening) {
+    stopListening();
+  } else {
+    startListening();
+  }
+}
+
+function startListening() {
+  if (!sr || !micReady) return;
+  // Reset display
+  document.getElementById('heardBox').className = 'heard-box';
+  document.getElementById('heardText').textContent = '…';
+  document.getElementById('heardText').style.cssText = '';
+  document.getElementById('resultBanner').className = 'result-banner';
+  document.getElementById('nextBtn').disabled = true;
+  hideErr();
+
+  try {
+    sr.start();
+  } catch (e) {
+    // Already running — abort then retry
+    try { sr.abort(); } catch (_) {}
+    setTimeout(() => {
+      try { sr.start(); }
+      catch (e2) { showErr('Could not start mic: ' + e2.message + '. Reload the page.'); }
+    }, 350);
+  }
+}
+
+function stopListening() {
+  isListening = false;
+  stopMeter();
+  const btn = document.getElementById('micBtn');
+  btn.classList.remove('rec');
+  btn.innerHTML = '<div class="mic-ring"></div>🎤';
+  document.getElementById('micHint').textContent = 'Tap to speak again';
+  setMicUI('ready', 'Tap 🎤 to try again');
+  try { sr.stop(); } catch (e) {}
+}
+
+function setMicUI(state, msg) {
+  const dot = document.getElementById('micDot');
+  const txt = document.getElementById('micTxt');
+  const btn = document.getElementById('micBtn');
+  const hint = document.getElementById('micHint');
+
+  dot.className = 'mic-dot ' + state;
+  txt.className = 'mic-txt ' + state;
+  txt.textContent = msg;
+
+  if (state === 'rec') {
+    btn.classList.add('rec');
+    btn.innerHTML = '<div class="mic-ring"></div>⏹';
+    hint.textContent = 'Tap to stop';
+  } else {
+    btn.classList.remove('rec');
+    btn.innerHTML = '<div class="mic-ring"></div>🎤';
+    hint.textContent = state === 'idle' ? 'Tap to start' : 'Tap to speak';
+  }
+}
+
+/* ═══════════════════════
+   AUDIO LEVEL METER
+═══════════════════════ */
+function startMeter() {
+  if (!mediaStream) return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const src = audioCtx.createMediaStreamSource(mediaStream);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    src.connect(analyser);
+    document.getElementById('lvlBar').classList.add('on');
+    tickMeter();
+  } catch (e) {}
+}
+function tickMeter() {
+  if (!analyser) return;
+  const d = new Uint8Array(analyser.frequencyBinCount);
+  analyser.getByteFrequencyData(d);
+  const avg = d.reduce((a, b) => a + b, 0) / d.length;
+  document.getElementById('lvlFill').style.width = Math.min(avg * 2.5, 100) + '%';
+  rafId = requestAnimationFrame(tickMeter);
+}
+function stopMeter() {
+  cancelAnimationFrame(rafId);
+  analyser = null;
+  document.getElementById('lvlBar').classList.remove('on');
+  document.getElementById('lvlFill').style.width = '0%';
+}
+
+/* ═══════════════════════════════════════════════
+   EVALUATE — improved single-letter recognition
+═══════════════════════════════════════════════ */
+function evaluate(primary, alts) {
+  const it = cur();
+  const targetKey = it.char.toLowerCase();
+
+  // Try all alternatives — accept if ANY matches
+  const allCandidates = [...new Set([primary, ...alts])];
+  const matched = allCandidates.some(t => matchTarget(t, targetKey));
+  const heard = primary || '(nothing heard)';
+
+  document.getElementById('heardText').textContent = heard;
+  document.getElementById('heardText').style.cssText = '';
+  document.getElementById('heardBox').className = 'heard-box ' + (matched ? 'correct' : 'wrong');
+
+  if (matched) {
+    score += mode === 'words' ? 15 : 10;
+    streak = Math.min(streak + 1, 5);
+    document.getElementById('scoreNum').textContent = score;
+    buildStreak();
+    renderLevel();
+    document.getElementById('nextBtn').disabled = false;
+    celebrate();
+    if (mode === 'words') animChips();
+    showResult(true,
+      pickFrom(['🎉 Correct! Well done!', '✅ That\'s right! Great job!', '🌟 Excellent!', '💪 Nailed it!', '🎊 Perfect!']),
+      `You said "${heard}" — matched ${it.char} ${it.ipa}`
+    );
+  } else {
+    streak = Math.max(streak - 1, 0);
+    buildStreak();
+    showResult(false,
+      '❌ Not quite — try again!',
+      `Heard: "${heard}" · Target: ${it.char} ${it.ipa} · ${it.hint}`
+    );
+  }
+}
+
+function showHeardInterim(t) {
+  document.getElementById('heardText').textContent = t || '…';
+  document.getElementById('heardText').style.cssText = 'color:var(--muted)';
+}
+
+/* ═══════════════════════
+   RENDER
+═══════════════════════ */
+function setMode(m) {
+  mode = m; idx = 0;
+  document.querySelectorAll('.tab').forEach((b, i) => {
+    b.classList.toggle('active', ['vowels','consonants','words'][i] === m);
+  });
+  clearResult();
+  renderCurrent();
+}
+function items() { return DATA[mode]; }
+function cur() { return items()[idx]; }
+
+function renderCurrent() {
+  const it = cur();
+  const isWord = mode === 'words';
+
+  document.getElementById('progFill').style.width = (idx / items().length * 100) + '%';
+
+  const bl = document.getElementById('bigLetter');
+  bl.textContent = it.char;
+  bl.style.setProperty('--lc1', it.colors[0]);
+  bl.style.setProperty('--lc2', it.colors[1]);
+  bl.style.animation = 'none'; void bl.offsetWidth;
+  bl.style.animation = 'pop .4s cubic-bezier(.34,1.56,.64,1)';
+
+  const tt = document.getElementById('typeTag');
+  tt.textContent = isWord ? 'CVC Word' : mode === 'vowels' ? 'Vowel' : 'Consonant';
+  tt.className = 'type-tag ' + (isWord ? 'word-tag' : mode === 'vowels' ? 'vowel-tag' : 'cons-tag');
+
+  const soundLabel = it.sound ? `<strong style="color:var(--acc1);font-size:1.1rem">${it.sound}</strong> <code>${it.ipa}</code>` : `<code>${it.ipa}</code>`;
+  document.getElementById('phonHint').innerHTML = `Say: ${soundLabel} — ${it.hint}`;
+  document.getElementById('articGuide').innerHTML = it.artic;
+
+  document.getElementById('lg').innerHTML = LIPS[it.shape] || LIPS['A_open'];
+  document.getElementById('lipsSvg').style.setProperty('--glow', it.colors[0]);
+
+  const ch = document.getElementById('chips');
+  if (isWord) {
+    ch.style.display = 'flex';
+    ch.innerHTML = it.letters.map((l, i) =>
+      `<div class="chip ${it.types[i]==='v'?'chip-v':'chip-c'}" id="c${i}">${l}</div>`
+    ).join('');
+  } else {
+    ch.style.display = 'none';
+  }
+
+  renderVib(it);
+  renderLevel();
+  clearResult();
+  document.getElementById('nextBtn').disabled = true;
+}
+
+function renderVib(it) {
+  const bars = document.getElementById('vibBars');
+  const lbl = document.getElementById('vibLbl');
+  bars.innerHTML = '';
+  const cfg = {
+    long:  { c:['#fbbf24','#f59e0b','#fbbf24','#f59e0b','#fbbf24','#f59e0b','#fbbf24'], sp:'.9s',  h:[55,75,90,80,65,85,60], t:'〰 Long sustained vibration — vowel' },
+    short: { c:['#a78bfa','#7c3aed','#a78bfa','#7c3aed','#a78bfa'],                     sp:'.25s', h:[80,30,85,25,80],         t:'• • Short burst vibration — consonant' },
+    mixed: { c:['#a78bfa','#fbbf24','#fbbf24','#fbbf24','#a78bfa'],                     sp:'.5s',  h:[70,60,90,85,60],         t:'Mixed — consonant · vowel · consonant' },
+  };
+  const c = cfg[it.vib] || cfg.long;
+  c.c.forEach((col, i) => {
+    const b = document.createElement('div'); b.className = 'vb';
+    b.style.cssText = `height:${c.h[i]||70}%;background:${col};--sp:${c.sp};--dl:${i*.09}s`;
+    bars.appendChild(b);
+  });
+  lbl.textContent = c.t;
+  if (navigator.vibrate) {
+    if (it.vib === 'long') navigator.vibrate([400]);
+    else if (it.vib === 'short') navigator.vibrate([70,50,70]);
+    else navigator.vibrate([70,40,300,40,70]);
+  }
+}
+
+function renderLevel() {
+  const lvl = document.getElementById('levelLbl');
+  lvl.textContent = score < 30 ? '🌱 Beginner' : score < 80 ? '🌿 Learner' : score < 160 ? '🌳 Practitioner' : '🏆 Speaker';
+}
+
+function buildStreak() {
+  const bar = document.getElementById('streakBar');
+  bar.innerHTML = '';
+  for (let i = 0; i < 5; i++) {
+    const d = document.createElement('div');
+    d.className = 'sd' + (i < streak ? ' on' : '');
+    bar.appendChild(d);
+  }
+}
+
+/* ═══════════════════════
+   RESULTS UI
+═══════════════════════ */
+function showResult(correct, msg, detail) {
+  const b = document.getElementById('resultBanner');
+  if (correct === null) {
+    b.className = 'result-banner wrong';
+    document.getElementById('rEmoji').textContent = '⚠️';
+    document.getElementById('rMsg').textContent = msg;
+    document.getElementById('rDetail').textContent = detail || '';
+    return;
+  }
+  b.className = 'result-banner ' + (correct ? 'correct' : 'wrong');
+  document.getElementById('rEmoji').textContent = correct ? '✅' : '❌';
+  document.getElementById('rMsg').textContent = msg;
+  document.getElementById('rDetail').textContent = detail || '';
+}
+
+function clearResult() {
+  document.getElementById('resultBanner').className = 'result-banner';
+  document.getElementById('heardBox').className = 'heard-box';
+  document.getElementById('heardText').textContent = '— tap 🎤 then speak —';
+  document.getElementById('heardText').style.cssText = 'color:var(--muted);font-size:.82rem';
+  hideErr();
+}
+
+function showErr(msg) {
+  const el = document.getElementById('errBox');
+  el.innerHTML = msg; el.classList.add('on');
+}
+function hideErr() {
+  document.getElementById('errBox').classList.remove('on');
+}
+function pickFrom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+/* ═══════════════════════
+   CHIP ANIMATION
+═══════════════════════ */
+function animChips() {
+  [0,1,2].forEach((i, j) => {
+    setTimeout(() => {
+      const c = document.getElementById('c' + i);
+      if (c) { c.classList.add('chip-hi'); setTimeout(() => c.classList.remove('chip-hi'), 400); }
+    }, j * 160);
+  });
+}
+
+/* ═══════════════════════
+   CONFETTI
+═══════════════════════ */
+function celebrate() {
+  const cel = document.getElementById('cel');
+  cel.innerHTML = ''; cel.classList.add('on');
+  const cols = ['#fbbf24','#f87171','#34d399','#a78bfa','#60a5fa','#fb923c'];
+  for (let i = 0; i < 55; i++) {
+    const p = document.createElement('div'); p.className = 'cp';
+    const x = (Math.random() - .5) * window.innerWidth;
+    const x2 = (Math.random() - .5) * window.innerWidth * 1.4;
+    const d = 1.5 + Math.random() * 2;
+    const sz = 6 + Math.random() * 8;
+    p.style.cssText = `background:${cols[~~(Math.random()*cols.length)]};top:20%;left:50%;--x:${x}px;--x2:${x2}px;--d:${d}s;animation-delay:${Math.random()*.3}s;border-radius:${Math.random()>.5?'50%':'2px'};width:${sz}px;height:${sz}px;`;
+    cel.appendChild(p);
+  }
+  setTimeout(() => { cel.classList.remove('on'); cel.innerHTML = ''; }, 2800);
+}
+
+/* ═══════════════════════
+   NAVIGATION
+═══════════════════════ */
+function doNext() {
+  idx = (idx + 1) % items().length;
+  clearResult();
+  renderCurrent();
+}
+function doSkip() {
+  streak = Math.max(streak - 1, 0);
+  buildStreak();
+  doNext();
+}
+function doRetry() {
+  clearResult();
+  document.getElementById('nextBtn').disabled = true;
+  renderVib(cur());
+}
+</script>
+</body>
+</html>
